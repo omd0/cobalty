@@ -23,4 +23,4 @@ COPY --from=build --chown=node:node /app/.git /app/.git
 USER node
 
 EXPOSE 9000
-CMD [ "node", "src/cobalt" ]
+CMD [ "sh", "-c", "API_PORT=${PORT:-9000} exec node src/cobalt" ]
