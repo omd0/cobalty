@@ -15,24 +15,12 @@ ENV WEB_DEFAULT_API=https://cobalty-yzvrpx.cranl.net
 
 RUN pnpm --filter @imput/cobalt-web build
 
-FROM nginx:alpine
-COPY --from=build /app/web/build /usr/share/nginx/html
+FROM base AS serve
+WORKDIR /app
 
-RUN printf 'server {\n\
-    listen 80;\n\
-    server_name _;\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-\n\
-    location / {\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-\n\
-    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {\n\
-        expires 1y;\n\
-        add_header Cache-Control "public, immutable";\n\
-    }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+RUN npm install -g serve@14
 
-EXPOSE 80
-CMD ["sh", "-c", "sed -i \"s/listen 80/listen ${PORT:-80}/g\" /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+COPY --from=build /app/web/build /app/public
+
+EXPOSE 3000
+CMD ["sh", "-c", "serve -s public -l ${PORT:-3000}"]
