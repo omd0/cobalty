@@ -9,18 +9,30 @@ COPY . /app
 RUN corepack enable
 RUN apk add --no-cache python3 alpine-sdk
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --prod --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
-RUN pnpm deploy --filter=@imput/cobalt-api --prod /prod/api
+ENV WEB_DEFAULT_API=https://cobalty-yzvrpx.cranl.net
 
-FROM base AS api
-WORKDIR /app
+RUN pnpm --filter @imput/cobalt-web build
 
-COPY --from=build --chown=node:node /prod/api /app
-COPY --from=build --chown=node:node /app/.git /app/.git
+FROM nginx:alpine
+COPY --from=build /app/web/build /usr/share/nginx/html
 
-USER node
+RUN printf 'server {\n\
+    listen 80;\n\
+    server_name _;\n\
+    root /usr/share/nginx/html;\n\
+    index index.html;\n\
+\n\
+    location / {\n\
+        try_files $uri $uri/ /index.html;\n\
+    }\n\
+\n\
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {\n\
+        expires 1y;\n\
+        add_header Cache-Control "public, immutable";\n\
+    }\n\
+}\n' > /etc/nginx/conf.d/default.conf
 
-EXPOSE 9000
-CMD [ "node", "src/cobalt" ]
+EXPOSE 80
+CMD ["sh", "-c", "sed -i \"s/listen 80/listen ${PORT:-80}/g\" /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
