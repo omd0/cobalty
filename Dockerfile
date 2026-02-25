@@ -15,12 +15,11 @@ ENV WEB_DEFAULT_API=https://cobalty-yzvrpx.cranl.net
 
 RUN pnpm --filter @imput/cobalt-web build
 
-FROM base AS serve
+FROM base
 WORKDIR /app
 
-RUN npm install -g serve@14
-
-COPY --from=build /app/web/build /app/public
+COPY --from=build /app/web/build /app/build
+COPY --from=build /app/web/server.js /app/server.js
 
 EXPOSE 3000
-CMD ["sh", "-c", "serve -s public -l ${PORT:-3000}"]
+CMD ["node", "server.js"]
