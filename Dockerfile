@@ -19,7 +19,7 @@ FROM base
 WORKDIR /app
 
 COPY --from=build /app/web/build /app/build
-COPY --from=build /app/web/server.js /app/server.js
+COPY --from=build /app/web/server.mjs /app/server.mjs
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "server.mjs"]
